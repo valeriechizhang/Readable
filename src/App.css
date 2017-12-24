@@ -22,7 +22,25 @@
   font-size: large;
 }
 
+.new-post {
+  text-align: right;
+}
+
+.post-overview {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.content {
+  text-align: left;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+
