@@ -1,54 +1,111 @@
 import React, { Component } from 'react';
 import '../App.css';
+
+import { loadCategories, loadPosts } from '../actions'
+import { openPostModal, closePostModal } from '../actions'
+
+import * as API from '../utils/api'
+
+import BlogPostOverview from './BlogPostOverview'
+import PostForm from './PostForm'
+
 import { nav, Button, ButtonGroup } from 'react-bootstrap';
 import { connect } from 'react-redux'
-import { loadCategories, loadPosts } from '../actions'
-import BlogPostOverview from './BlogPostOverview'
-import { header, url } from '../index'
+import Modal from 'react-modal'
+import sortBy from 'sort-by'
+import CloseIcon from 'react-icons/lib/fa/close'
 
 
 class App extends Component {
 
+    state = {
+        sortAttr: 'timestamp',
+        categoryFilter: 'all'
+    }
+
+    sortByTime = () => {
+        this.setState({ sortAttr: 'timestamp' })
+    }
+
+    sortByVote = () => {
+        this.setState({ sortAttr: 'voteScore'})
+    }
+
+    changeCategory = (category) => {
+        this.setState({ categoryFilter: category})
+    }
+
 
     componentDidMount() {
-        fetch(url+'categories', {headers: header})
-            .then((response) => response.json())
-            .then((cates => this.props.loadCategories(cates)))
-
-        fetch(url+'posts', {headers: header})
-            .then((response) => response.json())
-            .then((posts => this.props.loadPosts(posts)))
+        API.fetchCategories().then((cates) => this.props.loadCategories(cates))
+        API.fetchPosts().then((posts) => this.props.loadPosts(posts))
     }
 
 
     render() {
 
         const { categories, posts } = this.props
-        const cates = (categories && categories.categories)
+        const { sortAttr, categoryFilter } = this.state
+
+        console.log(this.state)
+
+        var displayPosts = posts.sort(sortBy(this.state.sortAttr))
+
+        if (categoryFilter !== 'all') {
+            displayPosts = displayPosts.filter(function(post){
+                return post.category===categoryFilter
+            })
+        }
+
 
         return (
+
             <div className='App'>
                 <div className='container'>
                     <nav className='navbar navbar-light bg-light'>
                         <ButtonGroup>
-                            <Button className='btn-sm btn-success'>All</Button>
-                            {(cates != null && cates.length > 0) && (cates.map((cate) => (
-                                <Button key={cate.name} className='btn-sm btn-success'>{cate.name}</Button>
+                            <Button className={(categoryFilter==='all'
+                                    &&'btn-sm btn-category-selected')||'btn-sm btn-category-unselected'}
+                                    onClick={()=>this.changeCategory('all')}>All</Button>
+                            {categories && (categories.map((cate) => (
+                                <Button key={cate.name} className={(categoryFilter===cate.name
+                                    &&'btn-sm btn-category-selected')||'btn-sm btn-category-unselected'}
+                                    onClick={()=>this.changeCategory(cate.name)}>{cate.name}</Button>
                             )))}
                         </ButtonGroup>
                         <ButtonGroup>
-                            <Button className='btn-sm btn-primary'>Sort by Date</Button>
-                            <Button className='btn-sm btn-primary'>Sort by Vote</Button>
+                            <Button className=
+                                {(this.state.sortAttr==='timestamp'&&'btn-sm btn-sort-selected')
+                                    || 'btn-sm btn-sort-unselected'}
+                                onClick={this.sortByTime}>Sort by Date</Button>
+                            <Button className={(this.state.sortAttr==='voteScore'&&'btn-sm btn-sort-selected')
+                                    || 'btn-sm btn-sort-unselected'}
+                                onClick={this.sortByVote}>Sort by Vote</Button>
                         </ButtonGroup>
                         <div className='new-post'>
-                            <Button className='btn btn-warning'>New Post</Button>
+                            <Button className='btn btn-warning' onClick={()=>{this.props.openPostModal()}}>New Post</Button>
                         </div>
                     </nav>
 
-                    {(posts && posts.length > 0) && (posts.map((post) => (
-                        <BlogPostOverview key={post.id} postId={post.id} />
-                    )))}
+                    <div>
+                        {(displayPosts && displayPosts.length > 0) && (displayPosts.map((post) => (
+                            <BlogPostOverview key={post.id} postId={post.id} />
+                        )))}
+                    </div>
 
+                    <Modal
+                        className='new-post-modal'
+                        overlayClassName='overlay'
+                        isOpen={this.props.postModalOpen}
+                        onRequestClose={()=>{this.props.closePostModal()}}
+                    >
+                        <div className='close-icon'>
+                            <CloseIcon size={30} onClick={()=>this.props.closePostModal()}/>
+                        </div>
+                        <div>
+                            <PostForm />
+                        </div>
+                    </Modal>
                 </div>
             </div>
         )
@@ -59,7 +116,8 @@ class App extends Component {
 function mapStateToProps (state) {
     return {
         categories: state.categories,
-        posts: state.posts
+        posts: state.posts,
+        postModalOpen: state.postModalOpen
     }
 }
 
@@ -67,6 +125,8 @@ function mapDispatchToProps(dispatch) {
     return {
         loadCategories: (categories) => dispatch(loadCategories(categories)),
         loadPosts: (posts) => dispatch(loadPosts(posts)),
+        openPostModal: () => dispatch(openPostModal()),
+        closePostModal: () => dispatch(closePostModal())
     }
 }
 

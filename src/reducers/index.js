@@ -1,11 +1,20 @@
+import { combineReducers } from 'redux'
+import sortBy from 'sort-by'
+
 import {
     LOAD_POSTS,
     LOAD_CATEGORIES,
+    VOTE_POST,
     ADD_POST,
+
+    OPEN_POST_MODAL,
+    CLOSE_POST_MODAL,
+
+    SORT_POST_BY_TIME,
+    SORT_POST_BY_VOTE,
+
     EDIT_POST,
     DELETE_POST,
-    UP_VOTE,
-    DOWN_VOTE,
     FETCH_COMMENTS,
     ADD_COMMENT
 } from '../actions'
@@ -13,7 +22,8 @@ import {
 
 const initialState = {
     categories: [],
-    posts: []
+    posts: [],
+    postModalOpen: false
 }
 
 
@@ -29,20 +39,53 @@ function getPostIndex(posts, postId) {
     }
 }
 
+function modalReducer(state=initialState, action) {
+    switch(action.type) {
+        case OPEN_POST_MODAL:
+            return {
+                ...state,
+                postModalOpen: true
+            }
+        case CLOSE_POST_MODAL:
+            return {
+                ...state,
+                postModalOpen: false
+            }
+        default:
+            return state
+    }
+}
 
-function postReducer (state = initialState, action) {
+
+function postReducer(state=initialState, action) {
     const postIndex = getPostIndex(state.posts, action.postId)
 
     switch(action.type) {
         case LOAD_CATEGORIES:
             return {
                 ...state,
-                categories: action.categories
+                categories: action.categories.categories
             }
         case LOAD_POSTS:
             return {
                 ...state,
                 posts: action.posts
+            }
+        case VOTE_POST:
+            return {
+                ...state,
+                posts: (state.posts.map((post) => {
+                    console.log(post.id, action.postId)
+                    if (post.id === action.postId) {
+                        if (action.option == 'upVote') {
+                            post.voteScore = post.voteScore+1
+                        } else {
+                            post.voteScore = post.voteScore-1
+                        }
+
+                    }
+                    return post
+                }))
             }
         case ADD_POST:
             return {
@@ -50,7 +93,8 @@ function postReducer (state = initialState, action) {
                 posts: [
                     ...state.posts,
                     action.post
-                ]
+                ],
+                newPostModalOpen: false
             }
         case EDIT_POST:
             return {
@@ -66,29 +110,6 @@ function postReducer (state = initialState, action) {
                 ...state,
                 posts: state.posts(post => post.id !== action.post.id)
             }
-        case UP_VOTE:
-            return {
-                ...state,
-                posts: (state.posts.map((post) => {
-                    console.log(post.id, action.postId)
-                    if (post.id === action.postId) {
-                        post.voteScore = post.voteScore+1
-                    }
-                    return post
-                }))
-            }
-        case DOWN_VOTE:
-            return {
-                ...state,
-                posts: (state.posts.map((post) => {
-                    if (post.id === action.postId) {
-                        console.log(post.voteScore)
-                        post.voteScore -= 1
-                        console.log(post.voteScore)
-                    }
-                    return post
-                }))
-            }
         case ADD_COMMENT:
             return {
                 ...state,
@@ -102,6 +123,16 @@ function postReducer (state = initialState, action) {
                         ]
                     }
                 }
+            }
+        case OPEN_POST_MODAL:
+            return {
+                ...state,
+                postModalOpen: true
+            }
+        case CLOSE_POST_MODAL:
+            return {
+                ...state,
+                postModalOpen: false
             }
         default:
             return state
