@@ -1,65 +1,43 @@
 import { combineReducers } from 'redux'
-import sortBy from 'sort-by'
 
 import {
     LOAD_POSTS,
     LOAD_CATEGORIES,
+    LOAD_SINGLE_POST,
+
     VOTE_POST,
     ADD_POST,
+    EDIT_POST,
+    DELETE_POST,
 
     OPEN_POST_MODAL,
     CLOSE_POST_MODAL,
 
-    SORT_POST_BY_TIME,
-    SORT_POST_BY_VOTE,
+    LOAD_COMMENTS,
+    LOAD_SINGLE_COMMENT,
+    VOTE_COMMENT,
+    ADD_COMMENT,
+    EDIT_COMMENT,
+    DELETE_COMMENT,
 
-    EDIT_POST,
-    DELETE_POST,
-    FETCH_COMMENTS,
-    ADD_COMMENT
+    OPEN_COMMENT_MODAL,
+    CLOSE_COMMENT_MODAL,
+
+
 } from '../actions'
 
 
 const initialState = {
     categories: [],
     posts: [],
-    postModalOpen: false
-}
-
-
-
-function getPostIndex(posts, postId) {
-    if (posts && postId) {
-        for (var i = 0; i < posts.length; i++) {
-            var p = posts[i]
-            if (p.id === postId) {
-                return i
-            }
-        }
-    }
-}
-
-function modalReducer(state=initialState, action) {
-    switch(action.type) {
-        case OPEN_POST_MODAL:
-            return {
-                ...state,
-                postModalOpen: true
-            }
-        case CLOSE_POST_MODAL:
-            return {
-                ...state,
-                postModalOpen: false
-            }
-        default:
-            return state
-    }
+    postModalOpen: false,
+    post: null,
+    comment: null,
+    commentModalOpen: false
 }
 
 
 function postReducer(state=initialState, action) {
-    const postIndex = getPostIndex(state.posts, action.postId)
-
     switch(action.type) {
         case LOAD_CATEGORIES:
             return {
@@ -71,13 +49,18 @@ function postReducer(state=initialState, action) {
                 ...state,
                 posts: action.posts
             }
+        case LOAD_SINGLE_POST:
+            return {
+                ...state,
+                post: action.post
+            }
         case VOTE_POST:
             return {
                 ...state,
                 posts: (state.posts.map((post) => {
                     console.log(post.id, action.postId)
                     if (post.id === action.postId) {
-                        if (action.option == 'upVote') {
+                        if (action.option === 'upVote') {
                             post.voteScore = post.voteScore+1
                         } else {
                             post.voteScore = post.voteScore-1
@@ -98,41 +81,121 @@ function postReducer(state=initialState, action) {
             }
         case EDIT_POST:
             return {
-                ...state.posts,
-                [postIndex]: {
-                    ...state.posts[postIndex],
-                    title: action.title,
-                    author: action.content
-                }
+                ...state,
+                posts: (state.posts.map((post) => {
+                    if (post.id === action.postId) {
+                        post.title = action.title
+                        post.body = action.body
+                    }
+                    return post
+                }))
             }
         case DELETE_POST:
-            return{
+            return {
                 ...state,
-                posts: state.posts(post => post.id !== action.post.id)
+                posts: state.posts.filter(post => post.id !== action.postId)
+            }
+        case LOAD_COMMENTS:
+            return {
+                ...state,
+                posts: (state.posts.map((post) => {
+                    if (post.id === action.postId) {
+                        post.comments = action.comments
+                    }
+                    return post
+                }))
+            }
+        case LOAD_SINGLE_COMMENT:
+            return {
+                ...state,
+                comment: action.comment
+            }
+        case VOTE_COMMENT:
+            return {
+                ...state,
+                posts: (state.posts.map((post) => {
+                    if (post.id === action.postId) {
+                        if (!post.comments) {
+                            post.comments = []
+                        }
+                        post.comments = post.comments.map((comment) => {
+                            if (comment.id === action.commentId) {
+                                if (action.option === 'upVote') {
+                                    comment.voteScore = comment.voteScore+1
+                                } else {
+                                    comment.voteScore = comment.voteScore-1
+                                }
+                            }
+                            return comment
+                        })
+                    }
+                    return post
+                }))
             }
         case ADD_COMMENT:
             return {
                 ...state,
-                posts: {
-                    ...state.posts,
-                    [postIndex]: {
-                        ...state.posts[postIndex],
-                        comments: [
-                            ...state.posts[postIndex].comment,
-                            action.comment
-                        ]
+                posts: (state.posts.map((post) => {
+                    if (post.id === action.postId) {
+                        if (!post.comments) {
+                            post.comments = []
+                        }
+                        post.comments.push(action.comment)
                     }
-                }
+                    return post
+                }))
+            }
+        case EDIT_COMMENT:
+            return {
+                ...state,
+                posts: (state.posts.map((post) => {
+                    if (post.id === action.postId) {
+                        if (post.comments) {
+                            post.comments = post.comments.map((comment) => {
+                                if (comment.id === action.commentId) {
+                                    comment.timestamp = action.timestamp
+                                    comment.body = action.body
+                                }
+                                return comment
+                            })
+                        }
+                    }
+                    return post
+                }))
+            }
+        case DELETE_COMMENT:
+            return {
+                ...state,
+                posts: (state.posts.map((post) => {
+                    if (post.id === action.postId) {
+                        post.comments = post.comments.filter((comment) => comment.id !== action.commentId)
+                    }
+                    return post
+                }))
             }
         case OPEN_POST_MODAL:
             return {
                 ...state,
+                commentModalOpen:false,
                 postModalOpen: true
             }
         case CLOSE_POST_MODAL:
             return {
                 ...state,
+                post: null,
                 postModalOpen: false
+            }
+        case OPEN_COMMENT_MODAL:
+            return {
+                ...state,
+                postModalOpen: false,
+                commentModalOpen: true
+            }
+        case CLOSE_COMMENT_MODAL:
+            return {
+                ...state,
+                comment: null,
+                commentModalOpen: false
             }
         default:
             return state

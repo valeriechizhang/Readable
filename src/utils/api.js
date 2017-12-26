@@ -20,7 +20,13 @@ function post(endpoint) {
     return fetch(url+endpoint, { method: 'POST', headers: header }).then((res)=>res)
 }
 
-export const votePost = (postId, option) => { return post('posts/'+postId+'?option='+option)}
+export const votePost = (postId, option) => {
+    return post('posts/'+postId+'?option='+option)
+}
+
+export const voteComment = (commentId, option) => {
+    return post('comments/'+commentId+'?option='+option)
+}
 
 export const addPost = (newPost) => {
     return post('posts?id=' + newPost.id
@@ -36,7 +42,7 @@ export const addComment = (newComment) => {
             + '&timestamp=' + newComment.timestamp
             + '&body=' + newComment.body
             + '&author=' + newComment.author
-            + '&parentId=' + newComment.postId)
+            + '&parentId=' + newComment.parentId)
 }
 
 

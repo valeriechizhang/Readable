@@ -3,11 +3,13 @@ import '../App.css';
 
 import { loadCategories, loadPosts } from '../actions'
 import { openPostModal, closePostModal } from '../actions'
+import { openCommentModal, closeCommentModal } from '../actions'
 
 import * as API from '../utils/api'
 
 import BlogPostOverview from './BlogPostOverview'
 import PostForm from './PostForm'
+import CommentForm from './CommentForm'
 
 import { nav, Button, ButtonGroup } from 'react-bootstrap';
 import { connect } from 'react-redux'
@@ -22,6 +24,7 @@ class App extends Component {
         sortAttr: 'timestamp',
         categoryFilter: 'all'
     }
+
 
     sortByTime = () => {
         this.setState({ sortAttr: 'timestamp' })
@@ -88,13 +91,13 @@ class App extends Component {
                     </nav>
 
                     <div>
-                        {(displayPosts && displayPosts.length > 0) && (displayPosts.map((post) => (
+                        {displayPosts && (displayPosts.map((post) => (
                             <BlogPostOverview key={post.id} postId={post.id} />
                         )))}
                     </div>
 
                     <Modal
-                        className='new-post-modal'
+                        className='edit-modal'
                         overlayClassName='overlay'
                         isOpen={this.props.postModalOpen}
                         onRequestClose={()=>{this.props.closePostModal()}}
@@ -106,6 +109,23 @@ class App extends Component {
                             <PostForm />
                         </div>
                     </Modal>
+
+
+                    <Modal
+                        className='edit-modal'
+                        overlayClassName='overlay'
+                        isOpen={this.props.commentModalOpen}
+                        onRequestClose={()=>{this.props.closeCommentModal()}}
+                    >
+                        <div className='close-icon'>
+                            <CloseIcon size={30} onClick={()=>this.props.closeCommentModal()}/>
+                        </div>
+                        <div>
+                            <CommentForm />
+                        </div>
+                    </Modal>
+
+
                 </div>
             </div>
         )
@@ -117,7 +137,8 @@ function mapStateToProps (state) {
     return {
         categories: state.categories,
         posts: state.posts,
-        postModalOpen: state.postModalOpen
+        postModalOpen: state.postModalOpen,
+        commentModalOpen: state.commentModalOpen
     }
 }
 
@@ -126,7 +147,9 @@ function mapDispatchToProps(dispatch) {
         loadCategories: (categories) => dispatch(loadCategories(categories)),
         loadPosts: (posts) => dispatch(loadPosts(posts)),
         openPostModal: () => dispatch(openPostModal()),
-        closePostModal: () => dispatch(closePostModal())
+        closePostModal: () => dispatch(closePostModal()),
+        openCommentModal: () => dispatch(openCommentModal()),
+        closeCommentModal: () => dispatch(closeCommentModal())
     }
 }
 

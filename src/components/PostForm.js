@@ -1,17 +1,14 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux'
-import PropTypes from 'prop-types'
-import { Button } from 'react-bootstrap';
-import Form, { Input, Fieldset } from 'react-bootstrap-form';
-import { addPost, closePostModal } from '../actions'
+import { addPost, editPost, closePostModal } from '../actions'
 import * as API from '../utils/api'
-import {DebounceInput} from 'react-debounce-input';
+
+import { Button } from 'react-bootstrap';
 
 
 class PostForm extends Component {
     // if the post already exists, fetch the post
     state = {
-        oldPost: {},
         currPost: {},
         isEditing: false
     }
@@ -32,8 +29,8 @@ class PostForm extends Component {
         this.setState({ currPost : Object.assign(this.state.currPost, { body:body })})
     }
 
-    setId = () => {
-        this.setState({ currPost : Object.assign(this.state.currPost, { id: this.guid() })})
+    setId = (id) => {
+        this.setState({ currPost : Object.assign(this.state.currPost, { id: (id || this.guid()) })})
     }
 
     setTimestamp = () => {
@@ -57,8 +54,11 @@ class PostForm extends Component {
 
     submitPost = () => {
         if (this.state.isEditing) {
-            var res = API.editPost(
-                this.state.oldPost.id,
+            API.editPost(
+                this.props.post.id,
+                this.state.currPost.title,
+                this.state.currPost.body)
+            this.props.editPost(this.props.post.id,
                 this.state.currPost.title,
                 this.state.currPost.body)
         } else {
@@ -75,7 +75,11 @@ class PostForm extends Component {
 
     componentDidMount() {
         if (this.props.post) {
-            this.setState({oldPost: this.props.post, isEditing: true})
+            this.setState({ isEditing: true })
+            this.setTitle(this.props.post.title)
+            this.setAuthor(this.props.post.author)
+            this.setCategory(this.props.post.category)
+            this.setBody(this.props.post.body)
         }
     }
 
@@ -88,25 +92,25 @@ class PostForm extends Component {
 
         return (
             <div>
-                <form readOnly={true}>
+                <form>
                     <div>
-                        <label>Title:&nbsp;&nbsp;</label>
+                        <div><label>Title:</label></div>
                         <input type='text'
-                            value={(oldPost&&oldPost.title)}
+                            value={(currPost.title&&currPost.title)||''}
                             onChange={(event)=>this.setTitle(event.target.value)}/>
                     </div>
 
                     <div>
-                        <label>Username:&nbsp;&nbsp;</label>
+                        <div><label>Username:</label></div>
                         <input type='text'
-                            placeholder={(oldPost&&oldPost.author)}
+                            value={(currPost.author&&currPost.author)||''}
                             disabled={isEditing}
                             onChange={(event)=>this.setAuthor(event.target.value)}/>
                     </div>
 
                     <div>
-                        <label>Category:&nbsp;&nbsp;</label>
-                        <select value={((oldPost&&oldPost.category)||(currPost&&currPost.category)) || 'none'}
+                        <div><label>Category:</label></div>
+                        <select value={(currPost&&currPost.category) || 'none'}
                             onChange={(event)=>this.setCategory(event.target.value)}
                             disabled={isEditing}>
                             <option value="none" disabled>Select one...</option>
@@ -117,7 +121,8 @@ class PostForm extends Component {
                     </div>
 
                     <div>
-                        <textarea placeholder={(oldPost&&oldPost.body)}
+                        <div><label>Content:</label></div>
+                        <textarea value={(currPost&&currPost.body)}
                             onChange={(event)=>this.setBody(event.target.value)}/>
                     </div>
 
@@ -136,13 +141,15 @@ class PostForm extends Component {
 
 function mapStateToProps (state) {
     return {
-        categories: state.categories
+        categories: state.categories,
+        post: state.post
     }
 }
 
 function mapDispatchToProps(dispatch) {
     return {
         addPost: (post) => dispatch(addPost(post)),
+        editPost: (postId, title, body) => dispatch(editPost(postId, title, body)),
         closePostModal: () => dispatch(closePostModal())
         //votePost: (postId, option) => dispatch(votePost(postId, option))
     }
